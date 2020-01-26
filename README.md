@@ -1,3 +1,9 @@
+# Update
+
+(enuchi) This was updated to add docs to class methods.
+
+[original readme below]
+
 # dts-google-apps-script
 
 d.ts files generator for [Google Apps Script](https://developers.google.com/apps-script/)
@@ -8,8 +14,8 @@ Scrape and generate Apps Script `d.ts` files.
 
 ```sh
 # Clone this repo
-node spider.js out.json # Scrape the Apps Script Reference Docs and create JSON files
-cat out.json | node gen.js # Pipe the output from above into a generator. New d.ts files are written to google-apps-script/
+node src/spider.js > out.json # Scrape the Apps Script Reference Docs and create JSON files
+node src/gen.js < out.json # Pipe the output from above into a generator. New d.ts files are written to google-apps-script/
 ```
 
 Create a PR to [DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped) with these updated files.
