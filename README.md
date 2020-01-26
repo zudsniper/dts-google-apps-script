@@ -1,8 +1,8 @@
 # Update
 
-(enuchi) This was updated to add docs to class methods.
+(enuchi) This updates [PopGoesTheWza's fork](https://github.com/PopGoesTheWza/dts-google-apps-script) to add docs to class methods.
 
-[original readme below]
+Original readme below
 
 # dts-google-apps-script
 
