@@ -1,3 +1,9 @@
+# Update
+
+(enuchi) This was updated to add docs to class methods.
+
+[original readme below]
+
 # dts-google-apps-script
 
 d.ts files generator for [Google Apps Script](https://developers.google.com/apps-script/)
