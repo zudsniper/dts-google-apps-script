@@ -1,3 +1,9 @@
+# Update
+
+(enuchi) This updates [PopGoesTheWza's fork](https://github.com/PopGoesTheWza/dts-google-apps-script) to add docs to class methods.
+
+Original readme below
+
 # dts-google-apps-script
 
 d.ts files generator for [Google Apps Script](https://developers.google.com/apps-script/)
