@@ -182,10 +182,9 @@ const getMethod = ($: CheerioStatic, cells: Cheerio, typeHref: string | undefine
     .attr('href')
     .substring(1);
   const method = createMethod($, cells, typeHref, `${url}#${detailId}`);
-  const methodSection = $('*[id]')
-    .filter(function(this: Cheerio) {
-      return $(this).attr('id') === detailId;
-    });
+  const methodSection = $('*[id]').filter(function(this: Cheerio) {
+    return $(this).attr('id') === detailId;
+  });
 
   const detailedDocsLines: string[] = [];
   methodSection
@@ -196,32 +195,33 @@ const getMethod = ($: CheerioStatic, cells: Cheerio, typeHref: string | undefine
         detailedDocsLines.push($(this).text());
       } else if ($(this).is('pre')) {
         // indent code part
-        detailedDocsLines.push(`${$(this)
-          .text()
-          .split(/\n/)
-          .map((line) => `    ${line}`)
-          .join('\n')}`);
+        detailedDocsLines.push(
+          `${$(this)
+            .text()
+            .split(/\n/)
+            .map((line) => `    ${line}`)
+            .join('\n')}`,
+        );
       } else {
         return false;
       }
-      
     });
 
   if (detailedDocsLines.length) method.docDetailed = detailedDocsLines.join('\n');
 
   methodSection.find('table.function.param tr:not(:first-child)').each(function(this: Cheerio) {
-      const paramCells = $(this).find('td');
-      if (paramCells.length === 3) {
-        const type = paramCells.eq(1);
-        const paramTypeHref = resolveHref(type.find('a'), url);
+    const paramCells = $(this).find('td');
+    if (paramCells.length === 3) {
+      const type = paramCells.eq(1);
+      const paramTypeHref = resolveHref(type.find('a'), url);
 
-        if (paramTypeHref) {
-          Scraper.enqueue(paramTypeHref);
-        }
-
-        method.params.push(createProperty($, paramCells, paramTypeHref));
+      if (paramTypeHref) {
+        Scraper.enqueue(paramTypeHref);
       }
-    });
+
+      method.params.push(createProperty($, paramCells, paramTypeHref));
+    }
+  });
   return method;
 };
 
@@ -319,41 +319,56 @@ co(function*(): any {
 
   const config: AxiosRequestConfig = {
     url: startURL,
-    // method: 'get',
-    // baseURL: '',
-    // responseType: 'document',
-    // transformResponse: (data, headers) => {
-    //   return data;
-    // }
   };
   const response: AxiosResponse = yield axios(config);
   const $ = cheerio.load(response.data);
 
-  let inServices = true;
-  const selector = 'ul.devsite-nav-section li.devsite-nav-item ul li.devsite-nav-item';
-  $(selector).each(function(this: Cheerio) {
-    const name = $(this).text();
+  // create a list to store GAS "service" expandable docs
+  const googleServiceBlocks: Cheerio[] = [];
 
-    if (name === 'Classes') {
-      inServices = false;
-    } else {
-      let url = $(this)
-        .find('a[href]')
-        .attr('href');
-      if (url) {
-        url = URL.resolve(startURL, url);
-
-        Scraper.enqueue(url);
-
-        if (inServices) {
-          Scraper.services[url] = true;
-        }
-
-        if (name === 'Overview') {
-          inServices = true;
-        }
+  // start from "Overview" links and select parent
+  $('a').each(function(this: Cheerio) {
+    if ($(this).text() === 'Overview') {
+      // find nearest parent expandable wrapper section
+      // some expandable sections are deeply nested so this finds the deepest level
+      const wrapper = $(this).closest('ul.devsite-nav-section');
+      
+      if (wrapper) {
+        googleServiceBlocks.push(wrapper);
       }
     }
+  });
+
+  googleServiceBlocks.forEach((wrapper) => {
+    $(wrapper).each(function(this: Cheerio) {
+      let inServices = false;
+      $(wrapper)
+        .find('li')
+        .each(function(this: Cheerio) {
+          const name = $(this).text().replace(/(\r\n|\n|\r)/gm, "").trim();
+
+          if (name === 'Overview') {
+            inServices = true;
+          }
+
+          if (name === 'Classes') {
+            inServices = false;
+          }
+
+          let url = $(this)
+            .find('a[href]')
+            .attr('href');
+          if (url) {
+            url = URL.resolve(startURL, url);
+
+            Scraper.enqueue(url);
+
+            if (inServices) {
+              Scraper.services[url] = true;
+            }
+          }
+        });
+    });
   });
 
   while (Scraper.queue.length > 0) {
