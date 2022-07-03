@@ -12,8 +12,8 @@
     "format": "prettier --write src/**.ts **/*.json",
     "lint": "tslint --project src",
     "dryrun": "npm publish --dry-run",
-    "fetch": "node build/spider.js > out.json",
-    "generate": "node build/gen.js < out.json"
+    "fetch": "ts-node src/spider.ts > out.json",
+    "generate": "ts-node src/gen.ts < out.json"
   },
   "license": "ISC",
   "dependencies": {
@@ -26,6 +26,7 @@
     "@types/co": "^4.6.2",
     "@types/node": "^10.17.0",
     "prettier": "^1.18.2",
+    "ts-node": "^10.8.1",
     "tslint": "^5.20.0",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.0.1",
