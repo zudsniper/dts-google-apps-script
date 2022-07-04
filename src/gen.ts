@@ -34,7 +34,7 @@ process.stdin.on('end', () => {
     return lines;
   };
 
-  const makeMethodDoc = (method: {docDetailed: string, url: string, isDeprecated: boolean, params: any}) => {
+  const makeMethodDoc = (method: { docDetailed: string; url: string; isDeprecated: boolean; params: any }) => {
     const { docDetailed, url, isDeprecated, params } = method;
     if (isDeprecated) return [];
     const lines: string[] = [];
@@ -44,7 +44,7 @@ process.stdin.on('end', () => {
     params.map((param: any) => lines.push(`     * @param ${param.name} ${param.doc.replace(/\n\s*/g, ' ')}`));
     lines.push('     */\n    ');
     return lines;
-  }
+  };
 
   Object.keys(data.categories)
     .sort()
@@ -76,12 +76,18 @@ process.stdin.on('end', () => {
           }
         }
 
+        // https://github.com/DefinitelyTyped/DefinitelyTyped/commit/dcb04cab793b8e2541274ca83d4fe39afe73e1b3
+        typeName = typeName.replace('Object', 'any');
+
+        // these are not defined in docs so types are not generated properly 
+        typeName = typeName.replace(/(TimeInterval|TargetAudience)/g, 'any');
+
         if (/^(.+)\.\.\.$/.test(typeName)) {
           typeName = `${RegExp.$1}[]`;
           name = `...${o.name}`;
         }
 
-        if (typeName.match(/^(Boolean|Number|Object|String)\W*$/)) {
+        if (typeName.match(/^(Boolean|Number|String)\W*$/)) {
           typeName = typeName.toLowerCase();
         }
 
@@ -106,7 +112,45 @@ process.stdin.on('end', () => {
             if (decl.kind === 'enum') {
               lines.push(`enum ${name} { ${decl.properties.map((p: any) => p.name).join(', ')} }`);
             } else {
-              lines.push(`interface ${name} {`);
+              // extend certain interfaces:
+              // https://github.com/DefinitelyTyped/DefinitelyTyped/commit/08bab0b659e21b94dbd04b70585508cd64e8284c
+              // https://github.com/DefinitelyTyped/DefinitelyTyped/commit/f78a6e7b4748aff75150cf2bbe5140c88985ca5a#
+
+              if (name === 'Blob') {
+                lines.push(`interface Blob extends BlobSource {`);
+              } else if (
+                categoryName === 'Document' &&
+                new Set([
+                  'Body',
+                  'ContainerElement',
+                  'Equation',
+                  'EquationFunction',
+                  'EquationFunctionArgumentSeparator',
+                  'EquationSymbol',
+                  'FooterSection',
+                  'Footnote',
+                  'FootnoteSection',
+                  'HeaderSection',
+                  'HorizontalRule',
+                  'InlineDrawing',
+                  'InlineImage',
+                  'ListItem',
+                  'PageBreak',
+                  'Paragraph',
+                  'Table',
+                  'TableCell',
+                  'TableOfContents',
+                  'TableRow',
+                  'Text',
+                  'UnsupportedElement',
+                ]).has(name)
+              ) {
+                lines.push(`interface ${name} extends Element {`);
+              } else {
+                // all other interfaces
+                lines.push(`interface ${name} {`);
+              }
+
               lines.push(
                 ...decl.properties
                   .map((p: any) => `${p.isDeprecated ? deprecationNotice : ''}${makeTypedName(p, true)};`)
@@ -115,7 +159,9 @@ process.stdin.on('end', () => {
               lines.push(
                 ...decl.methods.map((method: any) =>
                   [
-                    makeMethodDoc(method).map(indent).join('\n'),
+                    makeMethodDoc(method)
+                      .map(indent)
+                      .join('\n'),
                     indent(
                       `${method.isDeprecated ? deprecationNotice : ''}${makeTypedName({
                         name: `${method.name}(${
